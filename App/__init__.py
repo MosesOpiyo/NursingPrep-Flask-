@@ -47,9 +47,9 @@ def create_app(config_option):
     from App.User import user as user_blueprint
     app.register_blueprint(user_blueprint,url_prefix='/User',name='system-user')
     
-    from App.Website_Content.admin import PageAdmin
-    from App.Website_Content.models import Page,Content
-    admin.add_view(PageAdmin(Page, db.session))
-    admin.add_view(ModelView(Content,db.session))
+    # from App.Website_Content.admin import PageAdmin
+    # from App.Website_Content.models import Page,Content
+    # admin.add_view(PageAdmin(Page, db.session))
+    # admin.add_view(ModelView(Content,db.session))
 
     return app
