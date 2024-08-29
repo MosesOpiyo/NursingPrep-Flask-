@@ -5,7 +5,7 @@ from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from .models import Content
 
 class PageAdmin(ModelView):
-    form_columns = ['name', 'contents']
+    form_columns = ['slug', 'contents']
 
     def get_content_choices():
         return Content.query
@@ -19,7 +19,7 @@ class PageAdmin(ModelView):
     }
 
     form_create_rules = [
-        'name',
+        'slug',
         rules.FieldSet(('contents',), 'Contents')
     ]
 

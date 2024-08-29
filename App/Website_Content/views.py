@@ -4,11 +4,11 @@ from flask import jsonify
 from .models import Page
 from .schema import GetPageSchema
 
-@content.route('/Page-Content/<string:page>',methods=['GET'])
-def getPageContent(page):
+@content.route('/pages/<string:slug>',methods=['GET'])
+def getPageContent(slug):
     data = {}
     page_schema = GetPageSchema()
-    page_data = Page.query.filter_by(name = 'Homepage').first()
+    page_data = Page.query.filter_by(slug=slug).first()
     if page_data:
         page = page_schema.dump(page_data)
         data = page,200
