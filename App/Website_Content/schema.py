@@ -3,7 +3,7 @@ from flask_restful import reqparse
 from flask import request
 from marshmallow import fields
 
-from .models import Page,Section,Asset,Content
+from .models import Page,Section,Asset,Content,Pricing,Option,Feature,Benefits,Benefit
 
 class PageSchema(mm.Schema):
     def __init__(self):
@@ -71,15 +71,66 @@ class ContentSchema(mm.Schema):
         db.session.add(content_model)
         db.session.commit()
 
+class PricingSchema(mm.Schema):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('title',type=str,required=True,help='Title is required')
+        self.parser.add_argument('content',type=str,required=True,help='Content is required')
+
+    def parse_args(self):
+        return self.parser.parse_args()
+    
+    def new(self,data):
+        title = data['title'],
+        content = data['content'],
+        pricing = Pricing(title=title,content=content)
+        db.session.add(pricing)
+        db.session.commit()
+
+class OptionSchema(mm.Schema):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('subscription_duration',type=str,required=True,help='Subscription Duration is required')
+        self.parser.add_argument('price',type=str,required=True,help='Price is required')
+        self.parser.add_argument('ideal_audience',type=str,required=True,help='Ideal Audience is required')
+        self.parser.add_argument('action',type=str,required=True,help='Action is required')
+
+    def parse_args(self):
+        return self.parser.parse_args()
+    
+    def new(self,data):
+        subscription_duration = data['subscription_duration'],
+        price = data['price'],
+        ideal_audience = data['ideal_audience'],
+        action = data['action'],
+        option = Option(subscription_duration=subscription_duration,price=price,ideal_audience=ideal_audience,action=action)
+        db.session.add(option)
+        db.session.commit()
+
+class FeatureSchema(mm.Schema):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('feature',type=str,required=True,help='Feature is required')
+
+    def parse_args(self):
+        return self.parser.parse_args()
+    
+    def new(self,data):
+        feature = data['feature'],
+        
+        feature = Feature(feature=feature)
+        db.session.add(feature)
+        db.session.commit()
+
 class GetAssetSchema(mm.Schema):
     class Meta:
         model = Asset
-        fields = ['title','type','asset']
+        fields = ['id','title','type','class_name','asset_content','asset']
 
 class GetContentSchema(mm.Schema):
     class Meta:
         model = Content
-        fields = ['title','type','content']
+        fields = ['id','title','type','class_name','content']
 
 class GetSectionSchema(mm.Schema):
     assets = fields.Nested(GetAssetSchema,many=True) 
@@ -87,13 +138,51 @@ class GetSectionSchema(mm.Schema):
 
     class Meta:
         model = Section
-        fields = ['id','title','assets','content_blocks']
+        fields = ['id','name','section_text','title','assets','content_blocks']
 
 class GetPageSchema(mm.Schema):
     sections = fields.Nested(GetSectionSchema,many=True)
-
     class Meta:
         model = Page
         fields = ['id','title','slug','sections']
+
+class GetFeatureSchema(mm.Schema):
+    class Meta:
+        model = Feature
+        fields = ['feature']
+
+class GetOptionSchema(mm.Schema):
+    features = fields.Nested(GetFeatureSchema,many=True)
+    class Meta:
+        model = Option
+        fields = ['subscription_duration','price','ideal_audience','class_name','saving','action','features']
+
+class GetPricingSchema(mm.Schema):
+    options = fields.Nested(GetOptionSchema,many=True)
+    class Meta:
+        model = Pricing
+        fields = ['title','content','options']
+
+class GetBenefitSchema(mm.Schema):
+    class Meta:
+        model = Benefit
+        fields = ['type','comparison','benefit','class_name','top_class_name']
+
+class GetBenefitsSchema(mm.Schema):
+    benefit_listing = fields.Nested(GetBenefitSchema,many=True)
+    class Meta:
+        model = Benefits
+        fields = ['title','content','benefit_listing']
+
+class GetWholePageSchema(mm.Schema):
+    sections = fields.Nested(GetSectionSchema,many=True)
+    pricing_items = fields.Nested(GetPricingSchema,many=True)
+    benefits = fields.Nested(GetBenefitsSchema,many=True)
+    class Meta:
+        model = Page
+        include_relationships = True
+        load_instance = True
+        fields = ['id','title','slug','sections','pricing_items','benefits']
+
 
 

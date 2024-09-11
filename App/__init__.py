@@ -2,6 +2,7 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_restful import Api
 from flask_admin import Admin
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
@@ -16,6 +17,7 @@ from .config import config_options
 api = Api()
 db = SQLAlchemy()
 migrate = Migrate()
+cors = CORS()
 mm = Marshmallow()
 admin = Admin(name='Admin', template_mode='bootstrap3')
 jwt = JWTManager()
@@ -31,12 +33,15 @@ def create_app(config_option):
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
     app.app_context().push()
     api.init_app(app)
+    cors.init_app(app)
     jwt.init_app(app)
     db.init_app(app)
     migrate.init_app(app,db)
     mm.init_app(app)
     admin.init_app(app)
     db.create_all()
+
+    
 
     from App.Website_Content import content as content_blueprint
     app.register_blueprint(content_blueprint,url_prefix='/Content',name='system-content')
@@ -47,9 +52,16 @@ def create_app(config_option):
     from App.User import user as user_blueprint
     app.register_blueprint(user_blueprint,url_prefix='/User',name='system-user')
     
-    # from App.Website_Content.admin import PageAdmin
-    # from App.Website_Content.models import Page,Content
-    # admin.add_view(PageAdmin(Page, db.session))
-    # admin.add_view(ModelView(Content,db.session))
+    from App.Website_Content.admin import PageAdmin,SectionAdmin,AssetAdmin,ContentAdmin,PricingAdmin,OptionAdmin,FeatureAdmin,BenefitsAdmin,BenefitAdmin
+    from App.Website_Content.models import Page,Section,Asset,Content,Pricing,Option,Feature,Benefits,Benefit
+    admin.add_view(PageAdmin(Page, db.session))
+    admin.add_view(SectionAdmin(Section,db.session))
+    admin.add_view(AssetAdmin(Asset,db.session))
+    admin.add_view(ContentAdmin(Content,db.session))
+    admin.add_view(PricingAdmin(Pricing,db.session))
+    admin.add_view(OptionAdmin(Option,db.session))
+    admin.add_view(FeatureAdmin(Feature,db.session))
+    admin.add_view(BenefitsAdmin(Benefits,db.session))
+    admin.add_view(BenefitAdmin(Benefit,db.session))
 
     return app
