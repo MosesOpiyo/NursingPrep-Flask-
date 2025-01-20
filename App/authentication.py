@@ -22,7 +22,6 @@ def admin_authentication(email,password):
 def user_authentication(email,password):
     user_email_check = User.query.filter_by(email = email).first()
     if user_email_check is not None:
-        is_checked = False
         try:
             check = User.verify_password(user_email_check,password)
             if check:
@@ -34,4 +33,5 @@ def user_authentication(email,password):
         except:
             return None,404
     else:
+        print("User is None")
         return None,404
