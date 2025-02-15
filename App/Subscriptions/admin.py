@@ -9,4 +9,4 @@ class PlanAdmin(ModelView):
 
 class BillingAdminView(ModelView):
     # Control which columns are displayed
-    form_columns = ['id', 'address', 'city', 'country', 'state', 'payment_method', 'coupon_code']
+    form_columns = ['id', 'address', 'city', 'country', 'state', 'payment_method', 'coupon_code', 'plan', 'user', 'subscription_start_date', 'subscription_end_date']
