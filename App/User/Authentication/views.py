@@ -32,7 +32,7 @@ billing_parse.add_argument('state', type=str, required=True, help='State is requ
 billing_parse.add_argument('zip', type=str, required=True, help='Zip is required')
 
 
-@user.route('/Authentication/Registration',methods=['POST'])
+@user.route('/Authentication/TEAS/Registration',methods=['POST'])
 def registration():
     data = {}
     args = user_parser.parse_args()
@@ -50,37 +50,46 @@ def registration():
     zip = billing_args['zip']
     
     if billing_args['duration'] == "monthly":
-        plan = Plan.query.filter_by(subscription_duration = "1 Month").first()
+        plan = Plan.query.filter_by(
+            
+            subscription_duration = "1 Month"
+            ).first()
     else:
         plan = Plan.query.filter_by(subscription_duration = "3 Months").first()
 
-    billing = Billing(
-        address=address,
-        city=city,
-        country=country,
-        state=state,
-        payment_method = paymentMethod,
-        coupon_code = couponCode,
-    )
-    db.session.add(billing)
-    db.session.commit()
 
     user_exist_email = User.query.filter_by(email = email).first()
     if user_exist_email:
        data = f"message: Email already exists."
        print(data)
        return jsonify(data),500
+    
     new_user = User(
         username=username,
         email=email,
         password=password,
         plan_id=plan.id,
         billing_id=billing.id,
-        subscription_start_date=datetime.now(timezone.utc)
+        
         )
     
     db.session.add(new_user)
     db.session.commit()
+
+    billing = Billing(
+        subscription_start_date=datetime.now(timezone.utc),
+        address=address,
+        city=city,
+        country=country,
+        state=state,
+        payment_method = paymentMethod,
+        coupon_code = couponCode,
+        user_id = new_user.id,
+        plan_id = plan.id
+    )
+    db.session.add(billing)
+    db.session.commit()
+
     user_registered.send('user', user=user)
     user_email_check, status_code = user_authentication(email,password)
     data = user_email_check
