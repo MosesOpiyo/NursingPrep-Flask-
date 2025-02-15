@@ -165,7 +165,7 @@ class Question(db.Model):
 
     explaination = db.Column(db.Text,nullable=False)
   
-    choices = db.relationship('Choice', secondary=question_choices, backref='questions')
+    choices = db.relationship('Choice', secondary=question_choices, backref='question')
 
 class Tag(db.Model):
     id = db.Column(db.Integer,primary_key = True)
@@ -175,6 +175,50 @@ class Choice(db.Model):
     id = db.Column(db.Integer,primary_key = True)
     choice = db.Column(db.Text,nullable=False)
     rationale = db.Column(db.Text,nullable=False)
+
+
+question_choices_bank = db.Table('question_choices_bank',
+    db.Column('test_bank_question_id', db.Integer, db.ForeignKey('test_bank_question.id'), primary_key=True),
+    db.Column('question_choice_id', db.Integer, db.ForeignKey('question_choice.id'), primary_key=True)
+)
+
+# Main Question Model
+class TestBankQuestion(db.Model):
+    __tablename__ = 'test_bank_question'
+
+    id = db.Column(db.Integer, primary_key=True)
+    question_text = db.Column(db.Text, nullable=False)
+    difficulty = db.Column(db.String(50), nullable=False)
+    topic = db.Column(db.String(100), nullable=False)
+    rationale = db.Column(db.Text, nullable=True)
+    references = db.Column(db.Text, nullable=True)
+
+    # Corrected Foreign Key and Relationship
+    answer_id = db.Column(db.Integer, db.ForeignKey('question_choice.id'))
+    answer = db.relationship(
+        'QuestionChoice',
+        uselist=False,
+        primaryjoin="TestBankQuestion.answer_id == QuestionChoice.id"
+    )
+
+    choices = db.relationship(
+        'QuestionChoice',
+        secondary=question_choices_bank,
+        backref='test_bank_question'
+    )
+
+    def __repr__(self):
+        return f'<Question {self.id} - {self.topic}>'
+    
+    def _process_question_entry(entry):
+        required_fields = ['question_text', 'difficulty', 'topic', 'correct_answer', 'choices']
+        if not all(field in entry for field in required_fields):
+            return {'status': 'error', 'message': 'Missing required fields'}
+    
+
+class QuestionChoice(db.Model):
+    id = db.Column(db.Integer,primary_key = True)
+    choice = db.Column(db.Text,nullable=False)
 
 
 import datetime

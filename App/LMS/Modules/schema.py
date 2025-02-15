@@ -1,7 +1,7 @@
 from App import db,mm
 from flask_restful import reqparse
 from marshmallow import fields
-from .models import Course, Inclusion, Module, Topic, Lesson, Importance, Goal, Vocabulary, Point, Additional, LessonContent, Material, Problem, Quiz, Question, Choice
+from ..models import Course, Inclusion, Module, Topic, Lesson, Importance, Goal, Vocabulary, Point, Additional, LessonContent, Material, Problem, Quiz, Question, Choice
                     
 
 class InclusionSchema(mm.Schema):

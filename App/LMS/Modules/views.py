@@ -1,16 +1,16 @@
 from App import db
-from . import lms
+from .. import lms
 from flask import jsonify
 from flask_jwt_extended import jwt_required
 import csv
 from io import StringIO
 
-from .models import Course
-from ..User.get_user import get_user
+from ..models import Course
+from ...User.get_user import get_user
 from .schema import CourseInfoSchema,CourseSchema
 
-from .models import Module,UserProgress
-from .learning_content import get_course
+from ..models import Module,UserProgress
+from ..learning_content import get_course
 
 class CourseWork:
     @lms.route('/course/<string:type>',methods=['GET'])
