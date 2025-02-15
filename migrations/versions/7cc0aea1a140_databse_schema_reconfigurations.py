@@ -1,8 +1,8 @@
-"""initial migration
+"""Databse Schema reconfigurations
 
-Revision ID: fbcd8c729012
+Revision ID: 7cc0aea1a140
 Revises: 
-Create Date: 2025-01-21 00:27:51.858173
+Create Date: 2025-02-13 16:42:58.813978
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'fbcd8c729012'
+revision = '7cc0aea1a140'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -64,23 +64,6 @@ def upgrade():
     )
     with op.batch_alter_table('benefit', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_benefit_type'), ['type'], unique=False)
-
-    op.create_table('billing',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('address', sa.Text(), nullable=False),
-    sa.Column('city', sa.String(length=255), nullable=False),
-    sa.Column('country', sa.String(length=255), nullable=False),
-    sa.Column('state', sa.String(length=255), nullable=False),
-    sa.Column('payment_method', sa.Enum('PayPal', 'Credit Card', name='payment_method_enum'), nullable=False),
-    sa.Column('coupon_code', sa.String(length=255), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    with op.batch_alter_table('billing', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_billing_city'), ['city'], unique=False)
-        batch_op.create_index(batch_op.f('ix_billing_country'), ['country'], unique=False)
-        batch_op.create_index(batch_op.f('ix_billing_coupon_code'), ['coupon_code'], unique=False)
-        batch_op.create_index(batch_op.f('ix_billing_payment_method'), ['payment_method'], unique=False)
-        batch_op.create_index(batch_op.f('ix_billing_state'), ['state'], unique=False)
 
     op.create_table('choice',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -247,6 +230,11 @@ def upgrade():
     sa.Column('answer', sa.Text(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('question_choice',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('choice', sa.Text(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('quiz',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('quiz_name', sa.String(length=255), nullable=False),
@@ -289,6 +277,24 @@ def upgrade():
     with op.batch_alter_table('topicprogress', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_topicprogress_topic_name'), ['topic_name'], unique=False)
 
+    op.create_table('user',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('username', sa.String(length=255), nullable=False),
+    sa.Column('email', sa.String(length=255), nullable=True),
+    sa.Column('role', sa.Enum('Student', 'Tutor', 'Admin', 'SuperAdmin', name='user_role_enum'), nullable=False),
+    sa.Column('pass_secure', sa.String(length=255), nullable=True),
+    sa.Column('is_superadmin', sa.Boolean(), nullable=True),
+    sa.Column('is_admin', sa.Boolean(), nullable=True),
+    sa.Column('is_tutor', sa.Boolean(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email', name='unique_email_constraint'),
+    sa.UniqueConstraint('username', name='unique_username_constraint')
+    )
+    with op.batch_alter_table('user', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_user_email'), ['email'], unique=False)
+        batch_op.create_index(batch_op.f('ix_user_role'), ['role'], unique=False)
+        batch_op.create_index(batch_op.f('ix_user_username'), ['username'], unique=False)
+
     op.create_table('vocabulary',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('vocabulary', sa.Text(), nullable=False),
@@ -305,6 +311,29 @@ def upgrade():
     )
     with op.batch_alter_table('benefits', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_benefits_title'), ['title'], unique=False)
+
+    op.create_table('billing',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('subscription_start_date', sa.DateTime(), nullable=True),
+    sa.Column('subscription_end_date', sa.DateTime(), nullable=True),
+    sa.Column('address', sa.Text(), nullable=False),
+    sa.Column('city', sa.String(length=255), nullable=False),
+    sa.Column('country', sa.String(length=255), nullable=False),
+    sa.Column('state', sa.String(length=255), nullable=False),
+    sa.Column('payment_method', sa.Enum('PayPal', 'Credit Card', name='payment_method_enum'), nullable=False),
+    sa.Column('coupon_code', sa.String(length=255), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('plan_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['plan_id'], ['plan.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('billing', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_billing_city'), ['city'], unique=False)
+        batch_op.create_index(batch_op.f('ix_billing_country'), ['country'], unique=False)
+        batch_op.create_index(batch_op.f('ix_billing_coupon_code'), ['coupon_code'], unique=False)
+        batch_op.create_index(batch_op.f('ix_billing_payment_method'), ['payment_method'], unique=False)
+        batch_op.create_index(batch_op.f('ix_billing_state'), ['state'], unique=False)
 
     op.create_table('content_material',
     sa.Column('lessoncontent_id', sa.Integer(), nullable=False),
@@ -451,6 +480,17 @@ def upgrade():
     sa.ForeignKeyConstraint(['section_id'], ['section.id'], ),
     sa.PrimaryKeyConstraint('section_id', 'content_id')
     )
+    op.create_table('test_bank_question',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('question_text', sa.Text(), nullable=False),
+    sa.Column('difficulty', sa.String(length=50), nullable=False),
+    sa.Column('topic', sa.String(length=100), nullable=False),
+    sa.Column('rationale', sa.Text(), nullable=True),
+    sa.Column('references', sa.Text(), nullable=True),
+    sa.Column('answer_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['answer_id'], ['question_choice.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('topic_lessons',
     sa.Column('topic_id', sa.Integer(), nullable=False),
     sa.Column('lesson_id', sa.Integer(), nullable=False),
@@ -472,31 +512,25 @@ def upgrade():
     sa.ForeignKeyConstraint(['topicprogress_id'], ['topicprogress.id'], ),
     sa.PrimaryKeyConstraint('moduleprogress_id', 'topicprogress_id')
     )
-    op.create_table('user',
+    op.create_table('userprogress',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('username', sa.String(length=255), nullable=False),
-    sa.Column('email', sa.String(length=255), nullable=True),
-    sa.Column('pass_secure', sa.String(length=255), nullable=True),
-    sa.Column('plan_id', sa.Integer(), nullable=False),
-    sa.Column('billing_id', sa.Integer(), nullable=False),
-    sa.Column('subscription_start_date', sa.DateTime(), nullable=True),
-    sa.Column('subscription_end_date', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['billing_id'], ['billing.id'], ),
-    sa.ForeignKeyConstraint(['plan_id'], ['plan.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email', name='unique_email_constraint'),
-    sa.UniqueConstraint('username', name='unique_username_constraint')
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
     )
-    with op.batch_alter_table('user', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_user_email'), ['email'], unique=False)
-        batch_op.create_index(batch_op.f('ix_user_username'), ['username'], unique=False)
-
     op.create_table('benefit_listing',
     sa.Column('benefits_id', sa.Integer(), nullable=False),
     sa.Column('benefit_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['benefit_id'], ['benefit.id'], ),
     sa.ForeignKeyConstraint(['benefits_id'], ['benefits.id'], ),
     sa.PrimaryKeyConstraint('benefits_id', 'benefit_id')
+    )
+    op.create_table('courses_progress',
+    sa.Column('userprogress_id', sa.Integer(), nullable=False),
+    sa.Column('courseprogress_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['courseprogress_id'], ['courseprogress.id'], ),
+    sa.ForeignKeyConstraint(['userprogress_id'], ['userprogress.id'], ),
+    sa.PrimaryKeyConstraint('userprogress_id', 'courseprogress_id')
     )
     op.create_table('page_benefits',
     sa.Column('page_id', sa.Integer(), nullable=False),
@@ -526,25 +560,12 @@ def upgrade():
     sa.ForeignKeyConstraint(['question_id'], ['question.id'], ),
     sa.PrimaryKeyConstraint('question_id', 'choice_id')
     )
-    op.create_table('quiz_questions',
-    sa.Column('quiz_id', sa.Integer(), nullable=False),
-    sa.Column('question_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['question_id'], ['question.id'], ),
-    sa.ForeignKeyConstraint(['quiz_id'], ['quiz.id'], ),
-    sa.PrimaryKeyConstraint('quiz_id', 'question_id')
-    )
-    op.create_table('userprogress',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('courses_progress',
-    sa.Column('userprogress_id', sa.Integer(), nullable=False),
-    sa.Column('courseprogress_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['courseprogress_id'], ['courseprogress.id'], ),
-    sa.ForeignKeyConstraint(['userprogress_id'], ['userprogress.id'], ),
-    sa.PrimaryKeyConstraint('userprogress_id', 'courseprogress_id')
+    op.create_table('question_choices_bank',
+    sa.Column('test_bank_question_id', sa.Integer(), nullable=False),
+    sa.Column('question_choice_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['question_choice_id'], ['question_choice.id'], ),
+    sa.ForeignKeyConstraint(['test_bank_question_id'], ['test_bank_question.id'], ),
+    sa.PrimaryKeyConstraint('test_bank_question_id', 'question_choice_id')
     )
     op.create_table('quiz_evaluations',
     sa.Column('userprogress_id', sa.Integer(), nullable=False),
@@ -553,28 +574,32 @@ def upgrade():
     sa.ForeignKeyConstraint(['userprogress_id'], ['userprogress.id'], ),
     sa.PrimaryKeyConstraint('userprogress_id', 'evaluation_id')
     )
+    op.create_table('quiz_questions',
+    sa.Column('quiz_id', sa.Integer(), nullable=False),
+    sa.Column('question_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['question_id'], ['question.id'], ),
+    sa.ForeignKeyConstraint(['quiz_id'], ['quiz.id'], ),
+    sa.PrimaryKeyConstraint('quiz_id', 'question_id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('quiz_evaluations')
-    op.drop_table('courses_progress')
-    op.drop_table('userprogress')
     op.drop_table('quiz_questions')
+    op.drop_table('quiz_evaluations')
+    op.drop_table('question_choices_bank')
     op.drop_table('question_choices')
     op.drop_table('pricing_option')
     op.drop_table('page_pricing')
     op.drop_table('page_benefits')
+    op.drop_table('courses_progress')
     op.drop_table('benefit_listing')
-    with op.batch_alter_table('user', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_user_username'))
-        batch_op.drop_index(batch_op.f('ix_user_email'))
-
-    op.drop_table('user')
+    op.drop_table('userprogress')
     op.drop_table('topics_progress')
     op.drop_table('topic_quizzes')
     op.drop_table('topic_lessons')
+    op.drop_table('test_bank_question')
     op.drop_table('section_content')
     op.drop_table('section_asset')
     op.drop_table('question_markings')
@@ -598,11 +623,25 @@ def downgrade():
     op.drop_table('course_module')
     op.drop_table('course_inclusion')
     op.drop_table('content_material')
+    with op.batch_alter_table('billing', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_billing_state'))
+        batch_op.drop_index(batch_op.f('ix_billing_payment_method'))
+        batch_op.drop_index(batch_op.f('ix_billing_coupon_code'))
+        batch_op.drop_index(batch_op.f('ix_billing_country'))
+        batch_op.drop_index(batch_op.f('ix_billing_city'))
+
+    op.drop_table('billing')
     with op.batch_alter_table('benefits', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_benefits_title'))
 
     op.drop_table('benefits')
     op.drop_table('vocabulary')
+    with op.batch_alter_table('user', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_user_username'))
+        batch_op.drop_index(batch_op.f('ix_user_role'))
+        batch_op.drop_index(batch_op.f('ix_user_email'))
+
+    op.drop_table('user')
     with op.batch_alter_table('topicprogress', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_topicprogress_topic_name'))
 
@@ -621,6 +660,7 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_quiz_quiz_name'))
 
     op.drop_table('quiz')
+    op.drop_table('question_choice')
     op.drop_table('problem')
     op.drop_table('point')
     with op.batch_alter_table('plan', schema=None) as batch_op:
@@ -675,14 +715,6 @@ def downgrade():
 
     op.drop_table('content')
     op.drop_table('choice')
-    with op.batch_alter_table('billing', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_billing_state'))
-        batch_op.drop_index(batch_op.f('ix_billing_payment_method'))
-        batch_op.drop_index(batch_op.f('ix_billing_coupon_code'))
-        batch_op.drop_index(batch_op.f('ix_billing_country'))
-        batch_op.drop_index(batch_op.f('ix_billing_city'))
-
-    op.drop_table('billing')
     with op.batch_alter_table('benefit', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_benefit_type'))
 
