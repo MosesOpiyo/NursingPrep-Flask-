@@ -68,7 +68,7 @@ def create_app(config_option):
     from App.Website_Content.admin import PageAdmin,SectionAdmin,AssetAdmin,ContentAdmin,PricingAdmin,OptionAdmin,FeatureAdmin,BenefitsAdmin,BenefitAdmin
     from App.Website_Content.models import Page,Section,Asset,Content,Pricing,Option,Feature,Benefits,Benefit
     from App.Subscriptions.admin import PlanAdmin,BillingAdminView
-    from App.Subscriptions.models import Plan,Billing
+    from App.Subscriptions.models import Plan,PlanEntry,Billing
     from App.LMS.admin import CourseAdmin,InclusionAdmin,ModuleAdmin,TopicAdmin,LessonAdmin,ImportanceAdmin,GoalAdmin,VocabularyAdmin,PointAdmin,AdditionalAdmin,LessonContentAdmin,MaterialAdmin,ProblemAdmin,QuizAdmin,QuestionAdmin,ChoiceAdmin
     from App.LMS.models import Course,Inclusion,Module,Topic,Lesson,Importance,Goal,Vocabulary,Point,Additional,LessonContent,Material,Problem,Quiz,Question,Choice
 
@@ -85,6 +85,7 @@ def create_app(config_option):
     admin.add_view(BenefitAdmin(Benefit, db.session))
 
     admin.add_view(PlanAdmin(Plan, db.session))
+    admin.add_view(PlanAdmin(PlanEntry, db.session))
     admin.add_view(BillingAdminView(Billing, db.session))
 
     admin.add_view(CourseAdmin(Course, db.session))
