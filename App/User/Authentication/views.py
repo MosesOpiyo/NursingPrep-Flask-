@@ -1,6 +1,8 @@
 from flask import request,jsonify
 from flask_restful import reqparse
-from App import db,user_registered
+import re
+from flask_jwt_extended import jwt_required, get_jwt
+from App import db,user_registered,limiter
 from ...User import user
 from ..models import User
 from ...authentication import user_authentication,admin_authentication
@@ -35,6 +37,7 @@ billing_parse.add_argument('zip', type=str, required=True, help='Zip is required
 
 class Student:
     @user.route('/Authentication/<string:module>/Registration',methods=['POST'])
+    @limiter.limit("5 per minute")
     def registration(module):
         data = {}
         args = user_parser.parse_args()
@@ -52,6 +55,13 @@ class Student:
         paymentMethod = billing_args['paymentMethod']
         state = billing_args['state']
         zip = billing_args['zip']
+
+        email_regex = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+        if not re.match(email_regex, email):
+            return jsonify({"error": "Invalid email format"}), 400
+
+        if len(password) < 8:
+            return jsonify({"error": "Password must be at least 8 characters long"}), 400
         
         if duration == "monthly":
             plan = Plan.query.filter_by(
@@ -125,8 +135,8 @@ class Student:
         data = jsonify(user_email_check)
         return data,200 
 
-    @user.route('/Authentication/GoogleSignIn',methods=['POST'])
-    def google_login():
+    @user.route('/Authentication/<string:module>/<string:duration>/GoogleSignIn',methods=['POST'])
+    def google_login(module,duration):
         token = request.json['token']
         try:
             idinfo = id_token.verify_oauth2_token(token, requests.Request(), 'YOUR_GOOGLE_CLIENT_ID')
@@ -134,20 +144,47 @@ class Student:
             email = idinfo['email']
             username = idinfo['name']
             password=idinfo['sub'].encode()
+
+            if duration == "monthly":
+                plan = Plan.query.filter_by(
+                    module=module,
+                    subscription_duration = "1 month"
+                    ).first()
+            else:
+                plan = Plan.query.filter_by(
+                    module=module,
+                    subscription_duration = "3 months"
+                    ).first()
+
             user_exist_email = User.query.filter_by(email = email).first()
             if user_exist_email:
-                user_email_check, status_code = user_authentication(email,password)
+                user_email_check, status_code = user_authentication(email,password,module,plan.subscription_duration)
                 data = user_email_check
                 return jsonify(data),status_code
             new_user = User(username=username,email=email,password=password)
             db.session.add(new_user)
             db.session.commit()
             user_registered.send('user', user=user)
-            user_email_check, status_code = user_authentication(email,password)
+            user_email_check, status_code = user_authentication(email,password,module,plan.subscription_duration)
             data = user_email_check
             return jsonify(data),status_code
         except ValueError:
             return jsonify({"error": "Invalid token"}), 400
+        
+    # @user.route('/Authentication/Logout', methods=['POST'])
+    # @jwt_required()
+    # def logout():
+    #     jti = get_jwt()["jti"]  # Get JWT Token ID
+    #     exp_timestamp = get_jwt()["exp"]  # Get Token Expiry Time
+
+    #     # Calculate time left before expiration
+    #     now = datetime.now(timezone.utc).timestamp()
+    #     ttl = int(exp_timestamp - now) if exp_timestamp > now else 0
+
+    #     # Store token in Redis with TTL to prevent reuse
+    #     redis_client.setex(f"blacklist_{jti}", ttl, "revoked")
+
+    #     return jsonify({"msg": "Successfully logged out"}), 200
     
 
 class Tutor_Admin_SuperAdmin:

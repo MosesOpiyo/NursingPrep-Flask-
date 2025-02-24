@@ -6,11 +6,15 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
+from flask_caching import Cache
 from flask_admin.contrib.sqla import ModelView
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from decouple import config
 from datetime import timedelta
 from blinker import signal
 import os
+import redis
 
 from .config import config_options
 
@@ -24,6 +28,19 @@ mm = Marshmallow()
 admin = Admin(name='Admin', template_mode='bootstrap3')
 jwt = JWTManager()
 secret_key = os.urandom(24)
+cache = Cache(config={'CACHE_TYPE': 'simple'})
+
+limiter = Limiter(key_func=get_remote_address)
+
+env_name = os.getenv("FLASK_ENV", "development")
+
+# redis_client = redis.StrictRedis(
+#         host=app.config["REDIS_HOST"],
+#         port=app.config["REDIS_PORT"],
+#         db=app.config["REDIS_DB"],
+#         password=app.config["REDIS_PASSWORD"],
+#         decode_responses=True
+#     )
 
 user_registered = signal('user-registered')
 
@@ -39,6 +56,7 @@ def create_app(config_option):
 }
     app.config['SQLALCHEMY_TRACK_MODIFICACTIONS'] = False
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+    # app.config.from_object(config_options[env_name])
     app.app_context().push()
     api.init_app(app)
     cors.init_app(app)
@@ -46,7 +64,8 @@ def create_app(config_option):
     db.init_app(app)
     migrate.init_app(app,db)
     mm.init_app(app)
-    admin.init_app(app)
+    admin.init_app(app)  # Use 'redis' or 'memcached' in production
+    cache.init_app(app)
     db.create_all()
 
 

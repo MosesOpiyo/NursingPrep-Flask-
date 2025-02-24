@@ -26,15 +26,12 @@ def user_authentication(email,password,module,duration):
         check = User.verify_password(user_email_check,password)
         if check:
             user_billing = Billing.query.filter_by(user = user_email_check).first()
-            print("Bill:",user_billing)
             if user_billing is not None:
                 plan_check = Plan.query.filter_by(
                     module = module,
                     subscription_duration = duration
                     ).first()
-                print("Plan:", plan_check)
                 new_entry = PlanEntry.new_entry(plan_check,user_email_check)
-                print("Entry:", new_entry)
                 if new_entry == 200:
                     if check:
                             user = user_email_check.id
