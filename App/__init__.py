@@ -34,13 +34,13 @@ limiter = Limiter(key_func=get_remote_address)
 
 env_name = os.getenv("FLASK_ENV", "development")
 
-redis_client = redis.StrictRedis(
-        host=app.config["REDIS_HOST"],
-        port=app.config["REDIS_PORT"],
-        db=app.config["REDIS_DB"],
-        password=app.config["REDIS_PASSWORD"],
-        decode_responses=True
-    )
+# redis_client = redis.StrictRedis(
+#         host=app.config["REDIS_HOST"],
+#         port=app.config["REDIS_PORT"],
+#         db=app.config["REDIS_DB"],
+#         password=app.config["REDIS_PASSWORD"],
+#         decode_responses=True
+#     )
 
 user_registered = signal('user-registered')
 
@@ -56,7 +56,7 @@ def create_app(config_option):
 }
     app.config['SQLALCHEMY_TRACK_MODIFICACTIONS'] = False
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
-    app.config.from_object(config_options[env_name])
+    # app.config.from_object(config_options[env_name])
     app.app_context().push()
     api.init_app(app)
     cors.init_app(app)
