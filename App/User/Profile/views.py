@@ -1,7 +1,8 @@
 from flask import request,jsonify
 from flask_restful import reqparse
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from App import db
+
+from App import db,cache
 from ...User import user
 from ..models import User
 from ..schema import ProfileSchema
@@ -13,10 +14,11 @@ user_parser.add_argument('username', type=str, required=False)
 
 @user.route('/Authentication/Profile',methods=['GET'])
 @jwt_required()
+@cache.cached(timeout=300, key_prefix=lambda: f"profile_{get_jwt_identity()}")
 def get_profile():
     schema = ProfileSchema()
     current_user_id = get_jwt_identity()
-    user = User.query.filter_by(id=current_user_id).first()
+    user = User.query.with_entities(User.username, User.email).filter_by(id=current_user_id).first()
     if user:
         user_data = schema.dump(user)
         return user_data, 200
